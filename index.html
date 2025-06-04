@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Seleção de Dezenas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h1, h2, h3 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .table-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            border: 1px solid black;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .quadrant {
+            font-weight: bold;
+            background-color: #e9e9e9;
+        }
+        .number-cell {
+            cursor: pointer;
+            position: relative;
+            font-weight: bold;
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+            border: 1px solid black;
+        }
+        /* Cores base - versões mais claras */
+        .prime {
+            background-color: #ffff99;
+        }
+        .multiple3 {
+            background-color: #c1f7c1;
+        }
+        .multiple4 {
+            background-color: #c1e3f7;
+        }
+        .fibonacci {
+            background-color: #ffcccc;
+        }
+        .default {
+            background-color: white;
+        }
+        /* Combinações de cores */
+        .prime.multiple3 {
+            background: linear-gradient(135deg, #ffff99 0%, #ffff99 50%, #c1f7c1 50%, #c1f7c1 100%);
+        }
+        .prime.fibonacci {
+            background: linear-gradient(135deg, #ffff99 0%, #ffff99 50%, #ffcccc 50%, #ffcccc 100%);
+        }
+        .multiple3.fibonacci {
+            background: linear-gradient(135deg, #c1f7c1 0%, #c1f7c1 50%, #ffcccc 50%, #ffcccc 100%);
+        }
+        .multiple3.multiple4 {
+            background: linear-gradient(135deg, #c1f7c1 0%, #c1f7c1 50%, #c1e3f7 50%, #c1e3f7 100%);
+        }
+        .prime.multiple3.fibonacci {
+            background: linear-gradient(135deg, #ffff99 0%, #ffff99 33%, #c1f7c1 33%, #c1f7c1 66%, #ffcccc 66%, #ffcccc 100%);
+        }
+        .prime.multiple3.multiple4 {
+            background: linear-gradient(135deg, #ffff99 0%, #ffff99 33%, #c1f7c1 33%, #c1f7c1 66%, #c1e3f7 66%, #c1e3f7 100%);
+        }
+        .prime.multiple4.fibonacci {
+            background: linear-gradient(135deg, #ffff99 0%, #ffff99 33%, #c1e3f7 33%, #c1e3f7 66%, #ffcccc 66%, #ffcccc 100%);
+        }
+        .multiple3.multiple4.fibonacci {
+            background: linear-gradient(135deg, #c1f7c1 0%, #c1f7c1 33%, #c1e3f7 33%, #c1e3f7 66%, #ffcccc 66%, #ffcccc 100%);
+        }
+        .prime.multiple3.multiple4.fibonacci {
+            background: linear-gradient(135deg, #ffff99 0%, #ffff99 25%, #c1f7c1 25%, #c1f7c1 50%, #c1e3f7 50%, #c1e3f7 75%, #ffcccc 75%, #ffcccc 100%);
+        }
+        .selected {
+            position: relative;
+        }
+        .selected::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 28px;
+            height: 28px;
+            background-color: #736DED;
+            border-radius: 50%;
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .selected span {
+            position: relative;
+            z-index: 2;
+        }
+        .search-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        input, button {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        #searchButton {
+            background-color: #1a237e;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        #searchButton:hover {
+            background-color: #0d1545;
+        }
+        .stats-table th {
+            background-color: #1a237e;
+            color: white;
+        }
+        .stats-table td {
+            text-align: left;
+            padding: 12px;
+        }
+        .highlight {
+            font-weight: bold;
+            color: navy;
+        }
+        .quadrant-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+        }
+        .quadrant-table {
+            width: 48%;
+            margin-bottom: 20px;
+        }
+        /* Cores para a Tabela 2 */
+        .stats-table tr:nth-child(1) td {
+            background-color: #ffff99; /* Amarelo claro - Nº Primo */
+        }
+        .stats-table tr:nth-child(2) td {
+            background-color: #c1f7c1; /* Verde claro - Múltiplos de 3 */
+        }
+        .stats-table tr:nth-child(3) td {
+            background-color: #c1e3f7; /* Azul claro - Múltiplos de 4 */
+        }
+        .stats-table tr:nth-child(4) td {
+            background-color: #ffcccc; /* Vermelho claro - Fibonacci */
+        }
+        .stats-table tr:nth-child(5) td {
+            background-color: white; /* Outras Dezenas */
+        }
+        /* Linhas com fundo cinza */
+        .stats-table tr:nth-child(6) td,
+        .stats-table tr:nth-child(7) td,
+        .stats-table tr:nth-child(8) td,
+        .stats-table tr:nth-child(9) td {
+            background-color: #f2f2f2; /* Cinza claro */
+        }
+        /* Estilo do botão do WhatsApp */
+        .whatsapp-button {
+            background-color: #25D366;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .whatsapp-button:hover {
+            background-color: #128C7E;
+        }
+        #selectedNumbers {
+            font-weight: bold;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-radius: 4px;
+        }
+        @media (max-width: 768px) {
+            .quadrant-table {
+                width: 100%;
+            }
+            .search-section {
+                flex-direction: column;
+            }
+            input, button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sistema de Análise de Dezenas</h1>
+        
+        <div class="table-container">
+            <h2>Tabela 1 - Dezenas por Quadrantes </h2>
+            <div class="quadrant-container">
+                <!-- Quadrante 1 -->
+                <table class="quadrant-table">
+                    <thead>
+                        <tr>
+                            <th colspan="5" class="quadrant">Quadrante 1 </th>
+                        </tr>
+                    </thead>
+                    <tbody id="quadrant1">
+                        <!-- Numbers will be generated by JavaScript -->
+                    </tbody>
+                </table>
+                
+                <!-- Quadrante 2 -->
+                <table class="quadrant-table">
+                    <thead>
+                        <tr>
+                            <th colspan="5" class="quadrant">Quadrante 2 </th>
+                        </tr>
+                    </thead>
+                    <tbody id="quadrant2">
+                        <!-- Numbers will be generated by JavaScript -->
+                    </tbody>
+                </table>
+                
+                <!-- Quadrante 3 -->
+                <table class="quadrant-table">
+                    <thead>
+                        <tr>
+                            <th colspan="5" class="quadrant">Quadrante 3 </th>
+                        </tr>
+                    </thead>
+                    <tbody id="quadrant3">
+                        <!-- Numbers will be generated by JavaScript -->
+                    </tbody>
+                </table>
+                
+                <!-- Quadrante 4 -->
+                <table class="quadrant-table">
+                    <thead>
+                        <tr>
+                            <th colspan="5" class="quadrant">Quadrante 4 </th>
+                        </tr>
+                    </thead>
+                    <tbody id="quadrant4">
+                        <!-- Numbers will be generated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div>
+                <h3>Dezenas selecionadas: <span id="selectedCount">0</span></h3>
+                <div id="selectedNumbers">Nenhuma dezena selecionada</div>
+                <button id="whatsappButton" class="whatsapp-button">Enviar seleção via WhatsApp</button>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <h2>Tabela 2 - Análise Estatística</h2>
+            
+            <div class="search-section">
+                <label for="contestNumber">Nº do concurso:</label>
+                <input type="number" id="contestNumber" placeholder="Digite o número do concurso">
+                <button id="searchButton">Buscar</button>
+            </div>
+            
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>LÓGICA</th>
+                        <th>ESTATÍSTICA</th>
+                        <th>OBSERVAÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Nº Primo</td>
+                        <td>32% 2 dezenas<br>28% 1 dezena<br>20% ≥ 3 dezenas</td>
+                        <td id="primesObs">-</td>
+                    </tr>
+                    <tr>
+                        <td>Múltiplos de 3</td>
+                        <td>34% 2 dezenas<br>28% 1 dezena<br>20% 3 dezenas</td>
+                        <td id="multiples3Obs">-</td>
+                    </tr>
+                    <tr>
+                        <td>Múltiplos de 4</td>
+                        <td>28% 2 dezenas<br>26% 1 dezena<br>26% nenhuma dezena</td>
+                        <td id="multiples4Obs">-</td>
+                    </tr>
+                    <tr>
+                        <td>Fibonacci</td>
+                        <td>42% 1 dezena<br>28% nenhuma dezena<br>28% 2 dezenas</td>
+                        <td id="fibonacciObs">-</td>
+                    </tr>
+                    <tr>
+                        <td>Dezenas Branca</td>
+                        <td>1 Dezena, Máximo 2 Dezenas</td>
+                        <td id="otherObs">-</td>
+                    </tr>
+                    <tr>
+                        <td>Dezenas do Sorteio Anterior</td>
+                        <td>45% nenhuma dezena<br>40% Até uma dezena<br>14% mais de duas</td>
+                        <td id="previousObs">-</td>
+                    </tr>
+                    <tr>
+                        <td>Par/Ímpar</td>
+                        <td>34% (3P/3I)<br>18% (4P/2I)<br>16% (2P/4I)</td>
+                        <td id="parityObs">-</td>
+                    </tr>
+                    <tr>
+                        <td>Balanceamento de Quadrantes</td>
+                        <td>60% 3 quadrantes<br>38% 4 quadrantes<br>2% 2 quadrantes</td>
+                        <td id="quadrantsObs">-</td>
+                    </tr>
+                    <tr>
+                        <td>Linhas Horizontais</td>
+                        <td>54% 4 linhas<br>32% 5 linhas<br>14% 3 Linhas</td>
+                        <td id="linesObs">-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Fibonacci numbers up to 60
+        const fibonacciNumbers = [1, 2, 3, 5, 8, 13, 21, 34, 55];
+        
+        // Definição das linhas horizontais
+        const horizontalLines = [
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],    // Linha 1
+            [11, 12, 13, 14, 15, 16, 17, 18, 19, 20], // Linha 2
+            [21, 22, 23, 24, 25, 26, 27, 28, 29, 30], // Linha 3
+            [31, 32, 33, 34, 35, 36, 37, 38, 39, 40], // Linha 4
+            [41, 42, 43, 44, 45, 46, 47, 48, 49, 50], // Linha 5
+            [51, 52, 53, 54, 55, 56, 57, 58, 59, 60]  // Linha 6
+        ];
+        
+        // Function to check if a number is prime
+        function isPrime(num) {
+            if (num <= 1) return false;
+            if (num === 2) return true;
+            for (let i = 2; i <= Math.sqrt(num); i++) {
+                if (num % i === 0) return false;
+            }
+            return true;
+        }
+        
+        // Function to generate a row of numbers
+        function generateNumberRow(start, end) {
+            const row = document.createElement('tr');
+            
+            for (let num = start; num <= end; num++) {
+                const classes = [];
+                if (isPrime(num)) classes.push('prime');
+                if (num % 3 === 0) classes.push('multiple3');
+                if (num % 4 === 0) classes.push('multiple4');
+                if (fibonacciNumbers.includes(num)) classes.push('fibonacci');
+                if (classes.length === 0) classes.push('default');
+                
+                const td = document.createElement('td');
+                td.className = `number-cell ${classes.join(' ')}`;
+                
+                const span = document.createElement('span');
+                span.textContent = num.toString().padStart(2, '0');
+                td.appendChild(span);
+                
+                td.dataset.number = num;
+                
+                td.addEventListener('click', function() {
+                    this.classList.toggle('selected');
+                    updateSelectedNumbers();
+                    updateStatistics();
+                });
+                
+                row.appendChild(td);
+            }
+            
+            return row;
+        }
+        
+        // Generate the numbers tables for each quadrant
+        function generateQuadrantTables() {
+            // Quadrant 1: 01-05, 11-15, 21-25
+            const quadrant1 = document.getElementById('quadrant1');
+            quadrant1.appendChild(generateNumberRow(1, 5));
+            quadrant1.appendChild(generateNumberRow(11, 15));
+            quadrant1.appendChild(generateNumberRow(21, 25));
+            
+            // Quadrant 2: 06-10, 16-20, 26-30
+            const quadrant2 = document.getElementById('quadrant2');
+            quadrant2.appendChild(generateNumberRow(6, 10));
+            quadrant2.appendChild(generateNumberRow(16, 20));
+            quadrant2.appendChild(generateNumberRow(26, 30));
+            
+            // Quadrant 3: 31-35, 41-45, 51-55
+            const quadrant3 = document.getElementById('quadrant3');
+            quadrant3.appendChild(generateNumberRow(31, 35));
+            quadrant3.appendChild(generateNumberRow(41, 45));
+            quadrant3.appendChild(generateNumberRow(51, 55));
+            
+            // Quadrant 4: 36-40, 46-50, 56-60
+            const quadrant4 = document.getElementById('quadrant4');
+            quadrant4.appendChild(generateNumberRow(36, 40));
+            quadrant4.appendChild(generateNumberRow(46, 50));
+            quadrant4.appendChild(generateNumberRow(56, 60));
+        }
+        
+        // Update the selected numbers display
+        function updateSelectedNumbers() {
+            const selectedCells = document.querySelectorAll('.number-cell.selected');
+            const selectedNumbersDiv = document.getElementById('selectedNumbers');
+            const selectedCountSpan = document.getElementById('selectedCount');
+            
+            const numbers = Array.from(selectedCells).map(cell => cell.dataset.number.padStart(2, '0'));
+            const count = numbers.length;
+            
+            selectedCountSpan.textContent = count;
+            selectedNumbersDiv.innerHTML = count > 0 ? 
+                `<strong>${count} dezena(s) selecionada(s):</strong> ${numbers.join(', ')}` : 
+                'Nenhuma dezena selecionada';
+        }
+        
+        // Update the statistics table
+        function updateStatistics() {
+            const selectedCells = document.querySelectorAll('.number-cell.selected');
+            const selectedNumbers = Array.from(selectedCells).map(cell => parseInt(cell.dataset.number));
+            
+            // Function to format numbers with navy color
+            function formatNumbers(nums) {
+                const formatted = nums.map(n => n.toString().padStart(2, '0'));
+                return nums.length > 0 ? 
+                    `${nums.length} dezena(s) selecionada(s): <span class="highlight">${formatted.join(', ')}</span>` : 
+                    'Nenhuma dezena selecionada';
+            }
+            
+            // Count primes
+            const primes = selectedNumbers.filter(isPrime);
+            document.getElementById('primesObs').innerHTML = formatNumbers(primes);
+            
+            // Count multiples of 3
+            const multiples3 = selectedNumbers.filter(num => num % 3 === 0);
+            document.getElementById('multiples3Obs').innerHTML = formatNumbers(multiples3);
+            
+            // Count multiples of 4
+            const multiples4 = selectedNumbers.filter(num => num % 4 === 0);
+            document.getElementById('multiples4Obs').innerHTML = formatNumbers(multiples4);
+            
+            // Count Fibonacci numbers
+            const fibNumbers = selectedNumbers.filter(num => fibonacciNumbers.includes(num));
+            document.getElementById('fibonacciObs').innerHTML = formatNumbers(fibNumbers);
+            
+            // Other numbers
+            const otherNumbers = selectedNumbers.filter(num => 
+                !isPrime(num) && num % 3 !== 0 && num % 4 !== 0 && !fibonacciNumbers.includes(num)
+            );
+            document.getElementById('otherObs').innerHTML = formatNumbers(otherNumbers);
+            
+            // Parity (even/odd)
+            const even = selectedNumbers.filter(num => num % 2 === 0);
+            const odd = selectedNumbers.filter(num => num % 2 !== 0);
+            document.getElementById('parityObs').innerHTML = `
+                ${selectedNumbers.length > 0 ? 
+                    `${even.length} par(es) (<span class="highlight">${even.map(n => n.toString().padStart(2, '0')).join(', ')}</span>), 
+                    ${odd.length} ímpar(es) (<span class="highlight">${odd.map(n => n.toString().padStart(2, '0')).join(', ')}</span>)` : 
+                    '-'}
+            `;
+            
+            // Quadrants
+            const quadrants = {
+                q1: selectedNumbers.filter(num => 
+                    (num >= 1 && num <= 5) || (num >= 11 && num <= 15) || (num >= 21 && num <= 25)),
+                q2: selectedNumbers.filter(num => 
+                    (num >= 6 && num <= 10) || (num >= 16 && num <= 20) || (num >= 26 && num <= 30)),
+                q3: selectedNumbers.filter(num => 
+                    (num >= 31 && num <= 35) || (num >= 41 && num <= 45) || (num >= 51 && num <= 55)),
+                q4: selectedNumbers.filter(num => 
+                    (num >= 36 && num <= 40) || (num >= 46 && num <= 50) || (num >= 56 && num <= 60))
+            };
+            
+            const activeQuadrants = Object.values(quadrants).filter(q => q.length > 0).length;
+            let quadrantsText = `${activeQuadrants} quadrante(s) ativo(s) - `;
+            
+            for (const [q, nums] of Object.entries(quadrants)) {
+                if (nums.length > 0) {
+                    quadrantsText += `Q${q.substring(1)}: ${nums.length} (<span class="highlight">${nums.map(n => n.toString().padStart(2, '0')).join(', ')}</span>); `;
+                }
+            }
+            
+            document.getElementById('quadrantsObs').innerHTML = selectedNumbers.length > 0 ? 
+                quadrantsText : '-';
+            
+            // Lines - usando a nova definição de linhas horizontais
+            const linesActive = {};
+            selectedNumbers.forEach(num => {
+                horizontalLines.forEach((line, index) => {
+                    if (line.includes(num)) {
+                        if (!linesActive[index]) linesActive[index] = [];
+                        linesActive[index].push(num);
+                    }
+                });
+            });
+            
+            let linesText = `${Object.keys(linesActive).length} linha(s) ativa(s) - `;
+            for (const [lineIndex, nums] of Object.entries(linesActive)) {
+                const lineNum = parseInt(lineIndex) + 1;
+                linesText += `Linha ${lineNum}: ${nums.length} dezena(s) (<span class="highlight">${nums.map(n => n.toString().padStart(2, '0')).join(', ')}</span>); `;
+            }
+            
+            document.getElementById('linesObs').innerHTML = selectedNumbers.length > 0 ? 
+                linesText : '-';
+        }
+        
+        // Function to fetch lottery results from API
+        async function fetchLotteryResults(contestNumber) {
+            try {
+                // Try official Caixa API first
+                const response = await fetch(`https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena/${contestNumber}`);
+                
+                if (!response.ok) {
+                    // If official API fails, try alternative API
+                    const alternativeResponse = await fetch(`https://loteriascaixa-api.herokuapp.com/api/megasena/${contestNumber}`);
+                    if (!alternativeResponse.ok) {
+                        throw new Error('Concurso não encontrado');
+                    }
+                    const altData = await alternativeResponse.json();
+                    return {
+                        numero: altData.numero,
+                        dezenas: altData.dezenas.map(Number).sort((a, b) => a - b)
+                    };
+                }
+                
+                const data = await response.json();
+                
+                // Format the numbers from official API
+                return {
+                    numero: data.numeroConcurso,
+                    dezenas: data.listaDezenas.map(Number).sort((a, b) => a - b)
+                };
+                
+            } catch (error) {
+                console.error('Erro ao buscar concurso:', error);
+                
+                // Demo data for testing (remove in production)
+                if (contestNumber == 1234) {
+                    return {
+                        numero: 1234,
+                        dezenas: [4, 12, 23, 34, 45, 56]
+                    };
+                }
+                
+                throw error;
+            }
+        }
+
+        // Search contest function
+        document.getElementById('searchButton').addEventListener('click', async function() {
+            const contestNumber = document.getElementById('contestNumber').value;
+            if (!contestNumber) {
+                alert('Por favor, insira o número do concurso');
+                return;
+            }
+            
+            try {
+                // Show loading message
+                document.getElementById('previousObs').innerHTML = '<span style="color: blue;">Buscando concurso...</span>';
+                
+                // Fetch contest data
+                const contestData = await fetchLotteryResults(contestNumber);
+                
+                // Verify data
+                if (!contestData || !contestData.dezenas || contestData.dezenas.length !== 6) {
+                    throw new Error('Dados do concurso incompletos');
+                }
+                
+                // Get selected numbers
+                const selectedCells = document.querySelectorAll('.number-cell.selected');
+                const selectedNumbers = Array.from(selectedCells).map(cell => parseInt(cell.dataset.number));
+                
+                // Find common numbers
+                const commonNumbers = selectedNumbers.filter(num => contestData.dezenas.includes(num));
+                
+                // Format the numbers with 2 digits
+                const contestNumbersStr = contestData.dezenas.map(d => d.toString().padStart(2, '0')).join(', ');
+                
+                // Update observations
+                if (commonNumbers.length > 0) {
+                    const commonNumbersStr = commonNumbers.map(d => d.toString().padStart(2, '0')).join(', ');
+                    document.getElementById('previousObs').innerHTML = 
+                        `Concurso ${contestData.numero}: <span class="highlight">${contestNumbersStr}</span><br>
+                         <span style="color: green;">Possuem ${commonNumbers.length} dezena(s) Coincidentes:</span> <span class="highlight">${commonNumbersStr}</span>`;
+                } else {
+                    document.getElementById('previousObs').innerHTML = 
+                        `Concurso ${contestData.numero}: <span class="highlight">${contestNumbersStr}</span><br>
+                         <span style="color: red;">Nenhuma dezena coincidente com sua seleção</span>`;
+                }
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                document.getElementById('previousObs').innerHTML = 
+                    `<span style="color: red;">Erro ao buscar o concurso ${contestNumber}. Verifique o número e tente novamente.</span>`;
+                
+                // Try to get the latest contest number
+                try {
+                    const lastResponse = await fetch('https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena/latest');
+                    if (lastResponse.ok) {
+                        const lastData = await lastResponse.json();
+                        document.getElementById('previousObs').innerHTML += 
+                            `<br><span style="color: blue;">O último concurso disponível é o ${lastData.numeroConcurso}</span>`;
+                    }
+                } catch (e) {
+                    console.log('Não foi possível verificar o último concurso');
+                }
+            }
+        });
+        
+        // Function to send via WhatsApp
+        function sendViaWhatsApp() {
+            const selectedCells = document.querySelectorAll('.number-cell.selected');
+            const numbers = Array.from(selectedCells).map(cell => cell.dataset.number.padStart(2, '0'));
+            
+            if (numbers.length === 0) {
+                alert('Por favor, selecione pelo menos uma dezena antes de enviar.');
+                return;
+            }
+            
+            const message = `Olá Orzinei, segue as dezenas selecionadas para o próximo concurso: ${numbers.join(', ')}`;
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+            
+            window.open(whatsappUrl, '_blank');
+        }
+        
+        // Initialize the tables when the page loads
+        window.addEventListener('DOMContentLoaded', function() {
+            generateQuadrantTables();
+            
+            // Add event listener for WhatsApp button
+            document.getElementById('whatsappButton').addEventListener('click', sendViaWhatsApp);
+        });
+    </script>
+</body>
+</html>
